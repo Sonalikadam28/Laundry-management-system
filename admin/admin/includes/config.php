@@ -1,5 +1,4 @@
 
-<link rel="icon" type="image/png" href="../../images/logo.png">
 <?php
 //time zone
 date_default_timezone_set('Asia/Kolkata');

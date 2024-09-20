@@ -24,7 +24,7 @@ $totalPrice = 0;
 
 
 // Check if required data is provided
-if (isset($_POST['itemId']) && isset($_POST['quantity']) ) {
+if (isset($_POST['itemId']) && isset($_POST['quantity'])) {
 
     $itemIds = isset($_POST['itemId']) ? $_POST['itemId'] : [];
     $quantities = isset($_POST['quantity']) ? $_POST['quantity'] : [];
@@ -70,30 +70,35 @@ if (isset($_POST['itemId']) && isset($_POST['quantity']) ) {
     // Generate only one barcode for display on the main page
     $singleBarcode = base64_encode($generator->getBarcode($uniqueId, BarcodeGeneratorPNG::TYPE_CODE_128));
 
-    // Customer details
-    $fname = $_POST['fullname'];
-    $mobileno = $_POST['mobilenumber'];
-    $address = $_POST['address'];
+    if( isset($_POST['fullname']) && isset($_POST['mobileno']) && isset($_POST['address']) && !empty($_POST['fullname']) && !empty($_POST['mobileno']) && !empty($_POST['address']) ){
+// Customer details
+$fname = $_POST['fullname'];
+$mobileno = $_POST['mobilenumber'];
+$address = $_POST['address'];
 
-    // Insert customer details into tblcustomer
-    $query = mysqli_query($con, "INSERT INTO tblcustomer(fullname, mobno, address) VALUES('$fname', '$mobileno', '$address')");
+// Insert customer details into tblcustomer
+$query = mysqli_query($con, "INSERT INTO tblcustomer(fullname, mobno, address) VALUES('$fname', '$mobileno', '$address')");
 
-    if ($query) {
-        // Get the last inserted customer ID
-        $customerId = mysqli_insert_id($con);
+if ($query) {
+    // Get the last inserted customer ID
+    $customerId = mysqli_insert_id($con);
 
-        // Loop through items and insert order details into tblorder
-        foreach ($itemIds as $index => $itemId) {
-            $quantity = $quantities[$index];
-            if ($quantity > 0) { // Unique barcode per item
-                mysqli_query($con, "INSERT INTO tblorder(cid, item_id, qty, barcode, price) VALUES('$customerId', '$itemId', '$quantity', '$uniqueId', '$price')");
-            }
+    // Loop through items and insert order details into tblorder
+    foreach ($itemIds as $index => $itemId) {
+        $quantity = $quantities[$index];
+        if ($quantity > 0) { // Unique barcode per item
+            mysqli_query($con, "INSERT INTO tblorder(cid, item_id, qty, barcode, price) VALUES('$customerId', '$itemId', '$quantity', '$uniqueId', '$price')");
         }
-
-        echo "<script>alert('Customer details and order added successfully.');</script>";
-    } else {
-        echo "<script>alert('Something went wrong. Please try again.');</script>";
     }
+
+    echo "<script>alert('Customer details and order added successfully.');</script>";
+} else {
+    echo "<script>alert('Something went wrong. Please try again.');</script>";
+}
+    }else{
+        echo "<script>alert('Incomplete .');</script>";
+    }
+    
 } else {
     echo "Incomplete data found.";
     exit;

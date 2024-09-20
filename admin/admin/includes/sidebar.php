@@ -147,13 +147,13 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="#manage-reports.php" class="nav-link">
+                            <a href="scan-barcode.php" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
                                 <p>Scan Barcode</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="#manage-reports.php" class="nav-link">
+                            <a href="generate-bill.php" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
                                 <p>Generate Invoice</p>
                             </a>
