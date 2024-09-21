@@ -1,140 +1,176 @@
-<!DOCTYPE html>
-
-<html>
-
-<head>
-
 <?php
+session_start();
+error_reporting(0);
+// Database Connection
+include('includes/config.php');
 include ('Components/header.php');
+
+// Validating Session
+if(strlen($_SESSION['aid']) == 0) {
+    header('location:index.php');
+    exit();
+} else {
+    ?>
+    <style>
+      
+    </style>
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>APSOLUTION | Generate Invoice</title>
+
+        <!-- Google Font: Source Sans Pro -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="../../investor/plugins/fontawesome-free/css/all.min.css">
+        <!-- DataTables -->
+        <link rel="stylesheet" href="../../investor/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+        <link rel="stylesheet" href="../../investor/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+        <link rel="stylesheet" href="../../investor/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+        <!-- Theme style -->
+        <link rel="stylesheet" href="../../investor/dist/css/adminlte.min.css">
+    </head>
+    <body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <!-- Navbar -->
+        <?php include_once("includes/navbar.php"); ?>
+        <!-- /.navbar -->
+
+        <?php include_once("includes/sidebar.php"); ?>
+
+        <!-- Content Wrapper. Contains page content -->
+        <div class="content-wrapper">
+            <!-- Content Header (Page header) -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>Generate Invoice</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                                <li class="breadcrumb-item active">Generate Invoice</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div><!-- /.container-fluid -->
+            </section>
+
+            <!-- Main content -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <!-- Barcode Tracking Form -->
+                        <div class="col-md-6">
+                            <div class="card card-info">
+                                <div class="card-header">
+                                    <h3 class="card-title">Track Order by Barcode</h3>
+                                </div>
+                                <div id="reader" class="rounded"></div>
+                            </div>
+                        </div>
+
+                        <!-- Display Results -->
+                        <div class="col-md-6" id="result-section" style="display: none;">
+                            <div class="card card-info">
+                                <div class="card-header">
+                                    <h3 class="card-title">Order Details</h3>
+                                </div>
+                                <div class="card-body">
+                                    <h5>Customer Details</h5>
+                                    <p id="customer-details" class="text-muted"></p>
+
+                                    <h5>Items</h5>
+                                    <ul id="item-list" class="list-group"></ul>
+
+                                    <h5 class="mt-3">Grand Total</h5>
+                                    <p id="grand-total" class="text-success font-weight-bold"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- jQuery -->
+            <script src="../../investor/plugins/jquery/jquery.min.js"></script>
+            <!-- Bootstrap 4 -->
+            <script src="../../investor/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+            <!-- DataTables & Plugins -->
+            <script src="../../investor/plugins/datatables/jquery.dataTables.min.js"></script>
+            <script src="../../investor/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+            <script src="../../investor/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+            <script src="../../investor/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+            <script src="../../investor/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+            <script src="../../investor/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+            <script src="../../investor/plugins/jszip/jszip.min.js"></script>
+            <script src="../../investor/plugins/pdfmake/pdfmake.min.js"></script>
+            <script src="../../investor/plugins/pdfmake/vfs_fonts.js"></script>
+            <script src="../../investor/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+            <script src="../../investor/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+            <script src="../../investor/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+            <!-- AdminLTE App -->
+            <script src="../../investor/dist/js/adminlte.min.js"></script>
+
+            <!-- Scanner and Barcode Processing -->
+            <script>
+                const scanner = new Html5QrcodeScanner('reader', {
+                    qrbox: { width: 250, height: 250 }, 
+                    fps: 20 
+                });
+
+                scanner.render(success, error);
+
+                function success(result) {
+                    document.getElementById('result-section').style.display = 'block';
+                    
+                    // Send scanned barcode to fetch_order_details.php
+                    fetch('fetch_order_details.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'barcode=' + encodeURIComponent(result)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('customer-details').textContent = data.customerDetails;
+                            let itemsHtml = '';
+                            data.items.forEach(item => {
+                                itemsHtml += `<li class="list-group-item">${item}</li>`;
+                            });
+                            document.getElementById('item-list').innerHTML = itemsHtml;
+                            document.getElementById('grand-total').textContent = `₹${data.grandTotal}`;
+                        } else {
+                            displayError(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        displayError('An error occurred while fetching details.');
+                    });
+
+                    document.getElementById('reader').remove();
+                    scanner.clear();
+                }
+
+                function error(err) {
+                    console.error(err);
+                }
+
+                function displayError(message) {
+                    document.getElementById('customer-details').textContent = '';
+                    document.getElementById('item-list').innerHTML = '';
+                    document.getElementById('grand-total').textContent = '';
+                    document.getElementById('result-section').innerHTML = `<p>Error: ${message}</p>`;
+                }
+            </script>
+        </div>
+    </body>
+    </html>
+    <?php
+}
 ?>
-
-</head>
-
-<body class="body_app">
-
-<nav class="navbar navbar-light bg-light mb-3">
-
-    <div class="container-fluid">
-
-        <a class="navbar-brand" href="#">
-
-            <img src="/docs/5.0/assets/brand/bootstrap-logo.svg" alt="" width="30" height="24" class="d-inline-block align-text-top">Bootstrap
-
-        </a>
-
-    </div>
-
-</nav>
-
-
-<style>
-
-    main {
-        display: flex;
-
-        justify-content: center;
-
-        align-items: center;
-
-        border-radius: 20px;
-    }
-
-    #reader {
-        width: 600px;
-
-        border-radius: 30px;
-    }
-
-    #result {
-
-        text-align: center;
-
-        font-size: 1.5rem;
-    }
-</style>
-
-<main>
-    <div id="reader" class="rounded"></div>
-
-    <div id="result"></div>
-
-</main>
-
-<script>
-
-    const scanner = new Html5QrcodeScanner('reader', {
-        // Scanner will be initialized in DOM inside element with id of 'reader'
-        qrbox: {
-            width: 250,
-            height: 250,
-        },  // Sets dimensions of scanning box (set relative to reader element width)
-        fps: 20, // Frames per second to attempt a scan
-    });
-
-
-    scanner.render(success, error);
-    // Starts scanner
-
-    function success(result) {
-
-        let today = new Date().toISOString().slice(0, 10)
-
-        const date_obj = new Date();
-
-        time = new Date().toLocaleTimeString();
-
-        document.getElementById('result').innerHTML = `
-
-        <div class="card" style="width: 18rem; onload="console_log(${result});">
-
-        <img src="barcode-scan.gif" class="card-img-top" alt="...">
-
-        <div class="card-body">
-
-        <form action="validator.php" method="post">
-
-        <p style="font-size: 14px;" class="card-text">Bar Code Read Successfully : <span class="badge bg-primary">${result}</span></p>
-
-        <p style="font-size: 14px;" class="card-text">Date : <span class="badge bg-primary">${today}</span></p>
-
-        <p style="font-size: 14px;" class="card-text">Capture Time : <span class="badge bg-primary">${time}</span></p>
-
-        <input type="hidden" name="number_index" value="${result}" id="result">
-
-        <input type="hidden" name="time_val" value="${time}" id="capture_time">
-
-        <input type="hidden" name="date_val" value="${today}" id="capture_date">
-
-        <button type="submit" name="submit" class="btn btn-outline-primary btn-sm">Validation</button>
-
-        </form>
-
-        </div>
-
-        </div>
-        `;
-
-        // Prints result as a link inside result element
-
-        scanner.clear();
-        // Clears scanning instance
-
-        document.getElementById('reader').remove();
-        // Removes reader element from DOM since no longer needed
-
-    }
-
-    function error(err) {
-        console.error(err);
-        // Prints any errors to the console
-    }
-
-    function console_log(result)
-    {
-        console.log(result);
-    }
-</script>
-
-
-
-</html>
